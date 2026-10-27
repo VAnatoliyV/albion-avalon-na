@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0f1115">
+<link rel="icon" type="image/png" sizes="32x32" href="img/icon-32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="img/icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="img/icon-192.png">
+<title>Avalon Roads Map — Americas | Albion Journal</title>
+<meta name="description" content="Live shared map of the Roads of Avalon for the Albion Online Americas server: links sent in by Albion Journal players, time until each portal closes, and pathfinding between zones.">
+<link rel="canonical" href="https://vanatoliyv.github.io/albion-avalon-na/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Albion Journal">
+<meta property="og:url" content="https://vanatoliyv.github.io/albion-avalon-na/">
+<meta property="og:title" content="Avalon Roads Map — Americas | Albion Journal">
+<meta property="og:description" content="Live Roads of Avalon map for the Albion Online Americas server: portal timers and a path between zones.">
+<!-- Ключ админа (#key=… или #map/key=…) убираем из адреса сразу, до всего остального:
+     в истории и в закладках его быть не должно. Сам ключ — в localStorage. -->
+<script>
+(function(){
+  var h=location.hash||'', p=h.indexOf('#map/key=')===0 ? 9 : h.indexOf('#key=')===0 ? 5 : 0;
+  if(!p) return;
+  var k=h.slice(p);
+  try{ k=decodeURIComponent(k); }catch(e){}
+  try{ if(k) localStorage.setItem('aan_mapkey', k); }catch(e){}
+  try{ history.replaceState(null,'',location.pathname+location.search); }catch(e){}
+})();
+</script>
+<style>
+:root{
+  --bg:#0b0d12; --bg2:#0f1219; --panel:#151924; --panel2:#1c2130; --panel3:#232a3d;
+  --border:#262d3f; --border2:#333c55;
+  --text:#dde2ec; --muted:#8b93a8; --accent:#eebc4e; --accent2:#f5d47e;
+  --green:#62c96f; --red:#e46f61; --blue:#6aa5e0;
+  --shadow:0 8px 28px rgba(0,0,0,.35);
+}
+*{box-sizing:border-box}
+html{scrollbar-color:var(--panel3) var(--bg)}
+body{margin:0;background:radial-gradient(1200px 600px at 70% -10%, #171d2e 0%, var(--bg) 55%) fixed, var(--bg);
+  color:var(--text);font:14px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Inter',sans-serif}
+a{color:var(--accent)}
+/* ── шапка ── */
+header{padding:10px 22px;border-bottom:1px solid var(--border);display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;
+  background:linear-gradient(180deg, rgba(28,33,48,.92), rgba(21,25,36,.96));backdrop-filter:blur(8px);
+  position:sticky;top:0;z-index:50;box-shadow:0 2px 14px rgba(0,0,0,.35)}
+h1{font-size:17px;margin:0;color:var(--accent);letter-spacing:.2px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.srv{font-size:11.5px;font-weight:700;color:#181203;background:var(--accent);border-radius:999px;padding:2px 9px;letter-spacing:.3px}
+.hdrR{margin-left:auto;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.euLink{font-size:12.5px;text-decoration:none;color:var(--muted);border-bottom:1px dashed var(--border2)}
+.euLink:hover{color:var(--accent2)}
+.lngs{display:flex;gap:3px}
+button.lng{padding:3px 8px;font-size:11.5px;border-radius:6px;font-weight:600}
+button.lng.on{background:var(--accent);color:#181203;border-color:var(--accent)}
+select,input[type=text]{background:var(--bg2);color:var(--text);border:1px solid var(--border2);
+  border-radius:8px;padding:6px 9px;font-size:13px;transition:border-color .15s, box-shadow .15s;outline:none}
+select:hover,input:hover{border-color:#46516f}
+select:focus,input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(238,188,78,.12)}
+input[type=checkbox]{accent-color:var(--accent);width:15px;height:15px}
+label.ctl{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--muted);white-space:nowrap;min-width:0}
+.toggle{display:inline-flex;align-items:center;cursor:pointer;gap:6px}
+button{background:var(--panel2);color:var(--text);border:1px solid var(--border2);border-radius:8px;padding:7px 13px;
+  font-size:13px;cursor:pointer;transition:all .15s;font-weight:500;font-family:inherit}
+button:hover{border-color:var(--accent);color:var(--accent2)}
+button.btn{padding:2px 8px;font-size:11.5px;border-radius:6px}
+main{padding:16px 22px}
+.fresh{font-size:10.5px;color:var(--muted)}
+.panel{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:16px 18px;margin-bottom:14px;box-shadow:var(--shadow)}
+.panel b{color:var(--text)}
+.panel .panel{box-shadow:none;margin:10px 0 0}
+.mapTop{display:flex;align-items:center;gap:6px 12px;flex-wrap:wrap}
+.mapTop .here{font-size:12px;color:var(--accent2)}
+.mapShare{display:flex;align-items:center;flex-wrap:wrap;gap:4px 8px;margin:10px 0 4px;padding:9px 12px;border:1px solid var(--border2);border-radius:9px;font-size:12.5px;color:var(--muted)}
+.mapShare b{color:var(--text)}
+.mapShare span{flex:1;min-width:220px}
+.mapShare a{flex:none;text-decoration:none;font-weight:600;color:var(--accent);border:1px solid var(--accent);border-radius:7px;padding:4px 10px}
+.mapShare a:hover{background:var(--accent);color:#111}
+.secCtls{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin:10px 0}
+.secCtls select{max-width:240px}
+.mapWrap{position:relative}
+.mapCv{width:100%;height:70vh;min-height:360px;display:block;touch-action:none;border-radius:10px;background:radial-gradient(ellipse at 50% 45%, #1a1f2e 0%, #11141c 70%)}
+#mapInfo{margin-top:6px;min-height:16px}
+.mapLegend{margin-top:2px}
+.mapSoonBox{margin-top:12px}
+.mapSoonBox b{font-size:12.5px}
+.emptyBox{display:flex;flex-direction:column;align-items:center;gap:10px;padding:38px 20px 34px;text-align:center}
+.emptyIco{font-size:46px;opacity:.8}
+.emptyTtl{font-size:16px;color:var(--text);font-weight:600}
+.emptyHint{max-width:520px;line-height:1.55;font-size:12px}
+.mapTip{position:absolute;z-index:5;pointer-events:none;max-width:280px;background:rgba(20,24,36,.97);border:1px solid #3a4258;border-radius:10px;padding:9px 11px;box-shadow:0 8px 24px rgba(0,0,0,.45);font-size:12px;color:#d9dce6}
+.mapTip .mtName{font-weight:700;font-size:14px;color:var(--accent)}
+.mapTip .mtSub{color:#9aa1b5;margin:1px 0 6px}
+.mapTip .mtRow{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-bottom:6px}
+.mapTip .mtRow img{width:22px;height:22px}
+.mapTip .mtI{display:inline-flex;align-items:center;gap:2px;color:#cfd3e0}
+.mapTip .mtI svg{width:18px;height:18px}
+.mapTip .mtLinks{border-top:1px solid #2c3346;padding-top:5px;display:grid;gap:2px}
+.mzName{font-size:17px;font-weight:700;color:var(--accent);letter-spacing:.3px}
+.mzSub{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:12px;margin:3px 0 10px}
+.mzSq{width:9px;height:9px;flex:none}
+.mzBox{border:1px solid var(--border2);background:var(--panel2);border-radius:8px;padding:0 12px}
+.mzRow{display:flex;gap:8px;padding:7px 0;align-items:flex-start}
+.mzRow+.mzRow{border-top:1px solid var(--border)}
+.mzLbl{width:78px;flex:none;color:var(--muted);font-size:11px;padding-top:6px}
+.mzVal{flex:1;min-width:0;font-size:12px;padding-top:4px}
+.mzIcons{display:flex;flex-wrap:wrap;gap:6px 12px}
+.mzI{display:flex;flex-direction:column;align-items:center;gap:1px;font-size:10px;color:var(--muted);min-width:34px}
+.mzI img{width:30px;height:30px}
+.mzI svg{width:26px;height:26px;shape-rendering:crispEdges}
+.mzI .mzN{color:var(--text);opacity:.85}
+.mzI .mzMain{color:var(--accent)}
+.mzCamps{font-size:11px;color:var(--muted);margin-top:4px}
+.mzLinks{margin-top:8px;font-size:12px;color:var(--muted)}
+.mzLinks div{padding:2px 0}
+footer{padding:12px 22px 18px;color:var(--muted);font-size:11.5px;opacity:.85}
+@media (max-width:640px){
+  header{padding:9px 14px}
+  h1{font-size:15.5px}
+  .hdrR{margin-left:0;width:100%;justify-content:space-between}
+  main{padding:12px 10px}
+  footer{padding:10px 14px 16px}
+  .panel{padding:12px 12px}
+  .secCtls label.ctl:not(.toggle){flex:1 1 100%}
+  .secCtls label.ctl input[type=text], .secCtls select{flex:1;min-width:0;max-width:none}
+  .mapCv{height:62vh}
+}
+@media (max-width:480px){ .mzLbl{width:62px} }
+</style>
+</head>
+<body>
+<header id="hdr"><h1>🗺 Avalon Roads Map <span class="srv">Americas server</span></h1></header>
+<main id="app"><noscript><div class="panel">This map needs JavaScript.</div></noscript></main>
+<footer id="ftr"></footer>
+<script src="avalon-core.js"></script>
+<script>
+// ── Карта Дорог Авалона, сервер Америки ───────────────────────────────────
+// Отдельный сайт с одной картой. Связи присылает Albion Journal на наш сервер
+// (тот же, что у европейской карты, только server=americas), здесь только показ.
+// Ядро без DOM — avalon-core.js, у него свои тесты (test/).
+const LIVE_URL='https://129-80-180-213.sslip.io';
+const SERVER='americas';
+const EU_MAP='https://vanatoliyv.github.io/albion-craft-profit/#map';
+const APP_URL='https://vanatoliyv.github.io/albion-craft-profit/app/';
+const $=id=>document.getElementById(id);
+
+// ─── Язык ───
+// Ключи словаря — русские строки, как в tr() основного сайта; значения: [en, es, pt].
+// Числа внутри строки заменяются на {}: «3 ч 12 м» ищется как «{} ч {} м».
+const LANGS=['en','ru','es','pt'], LI={en:0, es:1, pt:2};
+const I18N={
+  'Карта Дорог Авалона':['Avalon Roads Map','Mapa de los Caminos de Avalon','Mapa das Estradas de Avalon'],
+  'Сервер Америки':['Americas server','Servidor de América','Servidor das Américas'],
+  'Карта Европы →':['Europe map →','Mapa de Europa →','Mapa da Europa →'],
+  'Язык':['Language','Idioma','Idioma'],
+  'Найти зону':['Find a zone','Buscar zona','Encontrar zona'],
+  'название':['name','nombre','nome'],
+  'Откуда':['From','Desde','De'],
+  'Куда':['To','Hasta','Para'],
+  'Только подтверждённые':['Confirmed only','Solo confirmadas','Somente confirmadas'],
+  'Подсказка при наведении':['Hover info','Info al pasar el ratón','Info ao passar o mouse'],
+  'Скоро закроются':['Closing soon','Se cerrarán pronto','Fecham em breve'],
+  'Ничего не закрывается в ближайший час.':['Nothing closes within the next hour.','No se cierra nada en la próxima hora.','Nada fecha na próxima hora.'],
+  'Карта сейчас недоступна':['The map is unavailable right now','El mapa no está disponible ahora','O mapa está indisponível agora'],
+  'Сервер не отвечает. Попробуем ещё раз через полминуты.':["The server isn't responding. We'll try again in half a minute.",'El servidor no responde. Lo intentaremos de nuevo en medio minuto.','O servidor não responde. Tentaremos de novo em meio minuto.'],
+  'Пока ни одной связи':['No links yet','Aún no hay ningún enlace','Ainda não há conexões'],
+  'Карта Америки только запущена: связи появятся, как только игроки с Albion Journal на сервере Америки начнут их присылать.':['The Americas map has just launched: links will appear as soon as Albion Journal players on the Americas server start sending them.','El mapa de América acaba de lanzarse: los enlaces aparecerán en cuanto los jugadores de Albion Journal en el servidor de América empiecen a enviarlos.','O mapa das Américas acabou de ser lançado: as conexões aparecerão assim que jogadores do Albion Journal no servidor das Américas começarem a enviá-las.'],
+  'Связи присылают игроки из Albion Journal: наведись в игре на портал дорог и нажми кнопку карточки зоны.':['Links are sent in by Albion Journal players: point at a roads portal in the game and press the button on the zone card.','Los enlaces los envían jugadores de Albion Journal: apunta en el juego a un portal de los caminos y pulsa el botón de la ficha de zona.','As conexões são enviadas por jogadores do Albion Journal: aponte para um portal das estradas no jogo e aperte o botão no cartão da zona.'],
+  'Путь:':['Path:','Ruta:','Caminho:'],
+  '(перех.: {})':['({} jumps)','({} saltos)','({} saltos)'],
+  'Пути нет':['No path','No hay ruta','Sem caminho'],
+  'связей: {} · пунктир — не проверена':['links: {} · dashed means not verified','enlaces: {} · la línea discontinua significa sin verificar','conexões: {} · tracejado significa não verificada'],
+  'Цвет линии — сколько осталось: зелёная больше 6 ч, жёлтая меньше 6 ч, красная меньше часа.':['Line color shows time left: green over 6h, yellow under 6h, red under 1h.','El color de la línea indica el tiempo restante: verde más de 6 h, amarillo menos de 6 h, rojo menos de 1 h.','A cor da linha mostra o tempo restante: verde mais de 6 h, amarela menos de 6 h, vermelha menos de 1 h.'],
+  'Хочешь добавлять дороги на карту?':['Want to add roads to the map?','¿Quieres añadir caminos al mapa?','Quer adicionar estradas ao mapa?'],
+  'Скачай Albion Journal, наведись в игре на портал дорог и нажми кнопку карточки зоны. Связь сразу появится здесь у всех.':['Download Albion Journal, point at a roads portal in the game and press the button on the zone card. The link shows up here for everyone right away.','Descarga Albion Journal, apunta en el juego a un portal de los caminos y pulsa el botón de la ficha de zona. El enlace aparecerá aquí para todos al instante.','Baixe o Albion Journal, aponte para um portal das estradas no jogo e aperte o botão no cartão da zona. A conexão aparece aqui para todos na hora.'],
+  'Скачать приложение':['Download the app','Descargar la app','Baixar o app'],
+  'Ты здесь:':['You are here:','Estás aquí:','Você está aqui:'],
+  'этой зоны пока нет на карте':['this zone has no links on the map yet','esta zona aún no tiene enlaces en el mapa','esta zona ainda não tem conexões no mapa'],
+  'админ-режим':['admin mode','modo de administrador','modo admin'],
+  'Связи присылают игроки сервера Америки из Albion Journal. Это не официальный сайт Albion Online.':['Links are sent in by Americas-server players using Albion Journal. This is not an official Albion Online site.','Los enlaces los envían jugadores del servidor de América con Albion Journal. Este no es un sitio oficial de Albion Online.','As conexões são enviadas por jogadores do servidor das Américas com o Albion Journal. Este não é um site oficial do Albion Online.'],
+  'синяя':['blue','azul','azul'], 'жёлтая':['yellow','amarilla','amarela'], 'красная':['red','roja','vermelha'], 'чёрная':['black','negra','preta'],
+  'город':['city','ciudad','cidade'], 'дорога':['road','camino','estrada'], 'подземелье':['dungeon','mazmorra','masmorra'], 'остров':['island','isla','ilha'], 'другое':['other','otro','outro'],
+  'волокно':['fiber','fibra','fibra'], 'шкуры':['hide','pieles','couro'], 'руда':['ore','mineral','minério'], 'дерево':['wood','madera','madeira'], 'камень':['stone','piedra','pedra'],
+  'малый':['small','pequeño','pequeno'], 'малый элитный':['small elite','pequeño de élite','pequeno de elite'],
+  'средний ветеранский':['medium veteran','mediano de veterano','médio de veterano'], 'средний элитный':['medium elite','mediano de élite','médio de elite'],
+  'одиночное':['solo','en solitario','solo'], 'групповое':['group','de grupo','em grupo'], 'рейдовое':['raid','de incursión','de raide'],
+  'удалить':['delete','eliminar','excluir'], 'забанить автора':['ban the author','vetar al autor','banir o autor'],
+  'закрыт':['closed','cerrado','fechado'], '{} ч {} м':['{}h {}m','{} h {} min','{} h {} min'], '{} м':['{}m','{} min','{} min'], '<{} м':['<{}m','<{} min','<{} min'],
+  'Удалить эту связь с карты?':['Remove this link from the map?','¿Eliminar este enlace del mapa?','Remover esta conexão do mapa?'],
+  'Забанить автора этой связи? Все связи, где он единственный автор, пропадут с карты.':['Ban the author of this link? Every link where they are the only author will disappear from the map.','¿Vetar al autor de este enlace? Todos los enlaces en los que sea el único autor desaparecerán del mapa.','Banir o autor desta conexão? Todas as conexões em que ele é o único autor sumirão do mapa.'],
+  'Готово.':['Done.','Hecho.','Pronto.'],
+  'Связь уже пропала с карты.':['The link is already gone from the map.','El enlace ya no está en el mapa.','A conexão já sumiu do mapa.'],
+  'Ключ админа не подошёл, админ-режим выключен.':["The admin key didn't work, admin mode is off.",'La clave de administrador no ha funcionado, el modo de administrador está desactivado.','A chave de admin não funcionou, o modo admin foi desligado.'],
+  'Сервер не ответил, попробуй ещё раз.':["The server didn't respond, try again.",'El servidor no respondió, inténtalo de nuevo.','O servidor não respondeu, tente de novo.'],
+  'ресурсы':['resources','recursos','recursos'], 'лагеря':['camps','campamentos','acampamentos'], 'данжи':['dungeons','mazmorras','masmorras'], 'нет':['none','ninguno','nenhum'],
+  'основной ресурс биома':["the biome's main resource",'recurso principal del bioma','recurso principal do bioma'],
+  'есть выход в город туманов':['exit to the Mists city','salida a la ciudad de las Nieblas','saída para a cidade das Névoas'],
+  'качество {}':['quality {}','calidad {}','qualidade {}'], 'портал на {}':['portal for {}','portal para {}','portal para {}'],
+  'дорога убежищ':['hideout road','camino de refugios','estrada de esconderijos'], 'глубокая дорога убежищ':['deep hideout road','camino de refugios profundo','estrada de esconderijos profunda'],
+  'глубокая дорога':['deep road','camino profundo','estrada profunda'], 'глубокая рейдовая дорога':['deep raid road','camino profundo de incursión','estrada profunda de raide'],
+  'королевская дорога':['royal road','camino real','estrada real'], 'королевская красная дорога':['royal red road','camino real rojo','estrada real vermelha'],
+  'соло малый':['small solo','solo pequeño','solo pequeno'], 'соло большой':['big solo','solo grande','solo grande'], 'групповой':['group','grupal','em grupo'],
+  'рейдовый малый':['small raid','incursión pequeña','raide pequeno'], 'рейдовый большой':['big raid','incursión grande','raide grande']};
+let LANG='en';
+try{
+  const s=localStorage.getItem('aan_lang');
+  if(LANGS.includes(s)) LANG=s;
+  else{ const n=String(navigator.language||'').slice(0,2).toLowerCase(); if(LANGS.includes(n)) LANG=n; }
+}catch(e){}
+function tr(s){
+  s=String(s); if(LANG==='ru') return s;
+  const i=LI[LANG]; let v=I18N[s]; if(v) return v[i];
+  const nums=[], k=s.replace(/\d+/g, m=>{ nums.push(m); return '{}'; });
+  v=I18N[k]; if(!v) return s;
+  let j=0; return v[i].replace(/\{\}/g, ()=>nums[j++]);
+}
+function setLang(l){
+  LANG=l; try{ localStorage.setItem('aan_lang', l); }catch(e){}
+  paintChrome(); render();
+}
+// Шапка и подвал: перерисовываются только при смене языка.
+function paintChrome(){
+  document.documentElement.lang=LANG;
+  $('hdr').innerHTML=`<h1>🗺 ${tr('Карта Дорог Авалона')} <span class="srv">${tr('Сервер Америки')}</span></h1>
+    <div class="hdrR"><a class="euLink" href="${EU_MAP}">${tr('Карта Европы →')}</a>
+    <div class="lngs" role="group" aria-label="${mapEsc(tr('Язык'))}">${LANGS.map(l=>`<button class="lng${l===LANG?' on':''}" data-l="${l}">${l.toUpperCase()}</button>`).join('')}</div></div>`;
+  $('hdr').querySelectorAll('button.lng').forEach(b=>b.onclick=()=>setLang(b.dataset.l));
+  $('ftr').innerHTML=`${tr('Связи присылают игроки сервера Америки из Albion Journal. Это не официальный сайт Albion Online.')} · <a href="${APP_URL}">Albion Journal</a>`;
+}
+
+// ─── Карта ───
+const MAP={links:new Map(), since:0, pos:new Map(), zones:null, here:'', sel:null, hover:null,
+  touched:false, fit:false, tip:true, edges:[], deg:new Map(), alpha:0, held:null, raf:null, fitLive:true,
+  from:'', to:'', onlyConf:false, q:'', timer:null, err:'', key:'',
+  shape:'', view:{x:0,y:0,k:1}, seq:0, busy:false, fail:0, pause:0, admMsg:''};
+try{ MAP.key=localStorage.getItem('aan_mapkey')||''; }catch(e){}
+try{ MAP.tip=localStorage.getItem('aan_maptip')!=='0'; }catch(e){}
+const mapEsc=t=>String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+// Адрес: #here=<код> (так открывают приложения), #map/here=<код> — как у
+// европейской карты; ключ админа #key=… / #map/key=… сразу убираем из адреса.
+function mapRoute(){
+  let id=(location.hash||'').replace(/^#/,'').replace(/^map\/?/,'');
+  if(id.startsWith('here=')) mapSetHere(decodeURIComponent(id.slice(5)));
+  if(id.startsWith('key=')){
+    let k=id.slice(4); try{ k=decodeURIComponent(k); }catch(e){}
+    MAP.key=k;
+    try{ localStorage.setItem('aan_mapkey', MAP.key); }catch(e){}
+    history.replaceState(null,'',location.pathname+location.search);
+  }
+}
+// «Я здесь» от приложения: обвести зону и подвинуть к ней карту.
+function mapSetHere(code){
+  MAP.here=code||'';
+  MAP.touched=false; MAP.fit=true; MAP.fitted=false;
+}
+window.avalonHere=code=>{ mapSetHere(code); paintHere(); mapPaint(); };
+window.addEventListener('hashchange', ()=>{ mapRoute(); paintHere(); mapPaint(); });
+async function mapLoadZones(){
+  if(MAP.zones) return;
+  const j=await fetch('zones.json').then(r=>r.json());
+  MAP.zones=new Map(j.zones.map(z=>[z.c,z]));
+}
+// Опрос как у европейской карты: 5 секунд на ответ, в фоновой вкладке не
+// ходим, после неудач ждём всё дольше (до 10 минут). Номер запроса отсекает
+// опоздавшие ответы: иначе старый ответ откатил бы since назад.
+// force — сразу, мимо паузы и идущего запроса (после действия админа).
+async function mapPoll(force){
+  if(document.hidden && !force) return;
+  const was=MAP.err, size=MAP.links.size;
+  let changed=false;
+  if(force || (!MAP.busy && Date.now()>=MAP.pause)){
+    const seq=++MAP.seq; MAP.busy=true;
+    let kill=null;
+    try{
+      await mapLoadZones();
+      const ctl=new AbortController(); kill=setTimeout(()=>ctl.abort(), 5000);
+      const r=await fetch(LIVE_URL+'/roads.json?server='+SERVER+'&since='+MAP.since, {cache:'no-store', signal:ctl.signal});
+      if(!r.ok) throw new Error(r.status);
+      const d=await r.json();
+      if(seq===MAP.seq){
+        changed = !!(d.full || (d.links&&d.links.length) || (d.gone&&d.gone.length));
+        MAP.links=AvalonCore.merge(MAP.links, d); MAP.since=d.now; MAP.err=''; MAP.fail=0; MAP.pause=0;
+        mapRelayout();
+      }
+    }catch(e){
+      if(seq===MAP.seq){
+        MAP.fail++; MAP.pause=Date.now()+AvalonCore.backoff(MAP.fail);
+        MAP.err='Карта сейчас недоступна';
+      }
+    }finally{
+      clearTimeout(kill);
+      if(seq===MAP.seq) MAP.busy=false;
+    }
+    if(seq!==MAP.seq) return;   // пока ждали, ушёл запрос новее: рисовать будет он
+  }
+  // Время вышло — связь убираем сами, даже если сервер не отвечает.
+  const live=AvalonCore.prune(MAP.links, Date.now()/1000);
+  if(live!==MAP.links){ MAP.links=live; changed=true; mapRelayout(); }
+  // Пустой опрос не перестраивает страницу: иначе закрывался бы открытый
+  // список «Откуда» и терялся бы курсор в поиске. Хватает перерисовки.
+  if(!changed && was===MAP.err && size===MAP.links.size && $('mapCv')){
+    const sb=$('mapSoon'); if(sb) sb.innerHTML=mapSoonHTML();   // время до закрытия идёт и без новых связей
+    mapPaint(); return;
+  }
+  const a=document.activeElement, qf=a&&a.id==='mapQ' ? a.selectionStart : null;
+  render();
+  if(qf!=null){ const q=$('mapQ'); if(q){ q.focus(); q.setSelectionRange(qf,qf); } }
+}
+function mapStart(){ if(!MAP.timer){ mapPoll(); MAP.timer=setInterval(()=>mapPoll(), 30000); } }
+// Вернулись во вкладку — сразу догоняем.
+document.addEventListener('visibilitychange', ()=>{ if(!document.hidden && MAP.timer) mapPoll(); });
+// Раскладка дорогая (каждый узел с каждым), поэтому считаем её только когда
+// поменялся сам набор связей, а не на каждом опросе.
+let mapMeasureCtx=null;
+function mapRelayout(){
+  const ls=[...MAP.links.values()];
+  const shape=[...MAP.links.keys()].sort().join(',');
+  if(shape===MAP.shape) return;
+  MAP.shape=shape;
+  const nodes=[...new Set(ls.flatMap(l=>[l.a,l.b]))].sort();
+  const first=!MAP.pos.size;
+  MAP.edges=ls.map(l=>[l.a,l.b]);
+  // Ширина подписи — чтобы зоны расступались по длине своих названий.
+  mapMeasureCtx=mapMeasureCtx||document.createElement('canvas').getContext('2d');
+  mapMeasureCtx.font='600 12px system-ui, -apple-system, sans-serif';
+  const W=new Map(nodes.map(c=>{ const z=MAP.zones&&MAP.zones.get(c); return [c, Math.ceil(mapMeasureCtx.measureText((z&&z.t?'T'+z.t+' ':'')+mapName(c)).width)]; }));
+  MAP.pos=first ? AvalonCore.settle(nodes, MAP.edges, 8, nodes.length>200?200:400, W) : AvalonCore.simNodes(nodes, MAP.edges, MAP.pos, 0, W);
+  AvalonCore.untangle(MAP.pos, MAP.edges, 40, 500);
+  if(first) AvalonCore.compact(MAP.pos, MAP.edges, 500);
+  MAP.deg=new Map(nodes.map(c=>[c,0]));
+  for(const [x,y] of MAP.edges){ MAP.deg.set(x,MAP.deg.get(x)+1); MAP.deg.set(y,MAP.deg.get(y)+1); }
+  MAP.alpha=first ? .05 : Math.max(MAP.alpha,.5);
+  if(!MAP.touched) MAP.fit=true;
+  mapRun();
+}
+// Узел крупнее, если у зоны больше дорог.
+function mapR(c){ return 6+Math.min(10, 3*Math.sqrt(MAP.deg&&MAP.deg.get(c)||1)); }
+// Физика крутится, пока граф не успокоится; потом кадры только по событиям.
+function mapRun(){
+  if(MAP.raf) return;
+  const tick=()=>{
+    MAP.raf=null;
+    if(!$('mapCv')) return;
+    MAP.alpha=AvalonCore.step(MAP.pos, MAP.edges||[], MAP.alpha, MAP.held);
+    if(MAP.fitLive && !MAP.touched) MAP.fit=true;
+    mapPaint();
+    if(MAP.alpha>0.004 || MAP.held) MAP.raf=requestAnimationFrame(tick);
+    else if(AvalonCore.crossings(MAP.pos, MAP.edges||[])){ AvalonCore.untangle(MAP.pos, MAP.edges, 40, 200); mapPaint(); }
+  };
+  MAP.raf=requestAnimationFrame(tick);
+}
+async function mapAdmin(action, link){
+  const ask = action==='ban'
+    ? 'Забанить автора этой связи? Все связи, где он единственный автор, пропадут с карты.'
+    : 'Удалить эту связь с карты?';
+  if(!confirm(tr(ask))) return;
+  try{
+    const ctl=new AbortController(), kill=setTimeout(()=>ctl.abort(), 10000);
+    const r=await fetch(LIVE_URL+'/roads/admin',{method:'POST', headers:{'content-type':'application/json'},
+      body:JSON.stringify({key:MAP.key, action, link, server:SERVER}), signal:ctl.signal});
+    clearTimeout(kill);
+    if(r.status===403){
+      MAP.key=''; try{ localStorage.removeItem('aan_mapkey'); }catch(e){}
+      MAP.admMsg='Ключ админа не подошёл, админ-режим выключен.';
+    } else if(r.status===404) MAP.admMsg='Связь уже пропала с карты.';
+    else if(r.ok) MAP.admMsg='Готово.';
+    else MAP.admMsg='Сервер не ответил, попробуй ещё раз.';
+  }catch(e){ MAP.admMsg='Сервер не ответил, попробуй ещё раз.'; }
+  const c=$('mapCard'); if(c && MAP.sel) c.innerHTML=mapCardHTML(MAP.sel);
+  MAP.since=0; mapPoll(true);
+}
+function mapName(c){ const z=MAP.zones&&MAP.zones.get(c); return z ? z.n : c; }
+function mapSoonHTML(){
+  const now=Date.now()/1000, ls=[...MAP.links.values()].filter(l=>!MAP.onlyConf||l.confirmed);
+  return AvalonCore.soon(ls, now, 1).slice(0,8).map(l=>
+    `<div class="fresh">${mapEsc(mapName(l.a))} ↔ ${mapEsc(mapName(l.b))} · ${mapEsc(tr(AvalonCore.left(l.closesAt, now)))}</div>`).join('')
+    || `<div class="fresh">${tr('Ничего не закрывается в ближайший час.')}</div>`;
+}
+// Строка «Ты здесь»: зона из приложения, даже если её ещё нет на карте.
+function hereHTML(){
+  if(!MAP.here) return '';
+  const on=MAP.pos.has(MAP.here);
+  return `📍 ${tr('Ты здесь:')} <b>${mapEsc(mapName(MAP.here))}</b>${on?'':' · '+tr('этой зоны пока нет на карте')}`;
+}
+function paintHere(){ const h=$('mapHere'); if(h) h.innerHTML=hereHTML(); }
+function emptyHTML(title, hint){
+  return `<div class="emptyBox"><div class="emptyIco" aria-hidden="true">🗺</div><div class="emptyTtl">${title}</div>${hint?`<div class="fresh emptyHint">${hint}</div>`:''}</div>`;
+}
+function mapHTML(){
+  const ls=[...MAP.links.values()].filter(l=>!MAP.onlyConf||l.confirmed);
+  const p = MAP.from&&MAP.to ? AvalonCore.path(ls, MAP.from, MAP.to, MAP.onlyConf) : null;
+  const opts=[...new Set(ls.flatMap(l=>[l.a,l.b]))].sort((a,b)=>mapName(a).localeCompare(mapName(b)))
+    .map(c=>`<option value="${mapEsc(c)}">${mapEsc(mapName(c))}</option>`).join('');
+  const ctls=`<div class="secCtls">
+    <label class="ctl">${tr('Найти зону')} <input type="text" id="mapQ" value="${mapEsc(MAP.q)}" placeholder="${mapEsc(tr('название'))}"></label>
+    <label class="ctl">${tr('Откуда')} <select id="mapFrom"><option value="">—</option>${opts}</select></label>
+    <label class="ctl">${tr('Куда')} <select id="mapTo"><option value="">—</option>${opts}</select></label>
+    <label class="ctl toggle"><input type="checkbox" id="mapConf"${MAP.onlyConf?' checked':''}> ${tr('Только подтверждённые')}</label>
+    <label class="ctl toggle"><input type="checkbox" id="mapTipChk"${MAP.tip?' checked':''}> ${tr('Подсказка при наведении')}</label>
+  </div>`;
+  let main;
+  if(!MAP.zones && !MAP.err) main=emptyHTML('…', '');
+  else if(MAP.err && !MAP.links.size) main=emptyHTML(tr('Карта сейчас недоступна'), tr('Сервер не отвечает. Попробуем ещё раз через полминуты.'));
+  else if(!MAP.links.size) main=emptyHTML(tr('Пока ни одной связи'), tr('Карта Америки только запущена: связи появятся, как только игроки с Albion Journal на сервере Америки начнут их присылать.')+'<br>'+tr('Связи присылают игроки из Albion Journal: наведись в игре на портал дорог и нажми кнопку карточки зоны.'));
+  else main=`<div class="mapWrap"><canvas id="mapCv" class="mapCv"></canvas><div id="mapTip" class="mapTip" hidden></div></div>
+    <div class="fresh" id="mapInfo">${p ? '<span>'+tr('Путь:')+'</span> '+p.map(c=>mapEsc(mapName(c))).join(' → ')+' <span>'+tr('(перех.: '+(p.length-1)+')')+'</span>' : (MAP.from&&MAP.to?'<span>'+tr('Пути нет')+'</span>':'')}</div>
+    <div class="fresh mapLegend">${tr('Цвет линии — сколько осталось: зелёная больше 6 ч, жёлтая меньше 6 ч, красная меньше часа.')}</div>
+    <div id="mapCard"></div>
+    <div class="mapSoonBox"><b>${tr('Скоро закроются')}</b><div id="mapSoon">${mapSoonHTML()}</div></div>`;
+  return `<div class="panel"><div class="mapTop">
+    <span class="fresh">${tr('связей: '+MAP.links.size+' · пунктир — не проверена')}</span>${MAP.err&&MAP.links.size?'<span class="fresh" id="mapDown">'+tr('Карта сейчас недоступна')+'</span>':''}${MAP.key?'<span class="fresh">🔑 '+tr('админ-режим')+'</span>':''}<span class="here" id="mapHere">${hereHTML()}</span></div>
+    <div class="mapShare">📤 <b>${tr('Хочешь добавлять дороги на карту?')}</b><span>${tr('Скачай Albion Journal, наведись в игре на портал дорог и нажми кнопку карточки зоны. Связь сразу появится здесь у всех.')}</span><a href="${APP_URL}">${tr('Скачать приложение')}</a></div>${ctls}${main}</div>`;
+}
+// Цвет дороги по оставшемуся времени: долго — спокойный, скоро — тревожный.
+function mapTimeColor(sec){ return sec<3600 ? '#ef5b4c' : sec<6*3600 ? '#e8b339' : '#4fb985'; }
+function mapZoneColor(c){
+  const z=MAP.zones&&MAP.zones.get(c);
+  return z ? (z.r ? '#8b6cff' : (MAP_ZCOLOR[z.q]||'#7c8499')) : '#7c8499';
+}
+// Вписать граф в холст плавно: вид подтягивается к цели, а не прыгает.
+// Если приложение сказало, где игрок, — его зона в центре, масштаб не мельче 0.9.
+function mapFitView(W,H, smooth){
+  if(!MAP.pos.size) return;
+  let x0=Infinity,y0=Infinity,x1=-Infinity,y1=-Infinity;
+  for(const p of MAP.pos.values()){ x0=Math.min(x0,p.x-70); x1=Math.max(x1,p.x+70); y0=Math.min(y0,p.y-30); y1=Math.max(y1,p.y+40); }
+  let k=Math.max(.35, Math.min(1.6, W/(x1-x0||1), H/(y1-y0||1)));
+  const h=MAP.here && MAP.pos.get(MAP.here);
+  const t=h ? {x:-h.x, y:-h.y, k:Math.max(k,.9)} : {x:-(x0+x1)/2, y:-(y0+y1)/2, k}, v=MAP.view, f=smooth?0.12:1;
+  MAP.view={x:v.x+(t.x-v.x)*f, y:v.y+(t.y-v.y)*f, k:v.k+(t.k-v.k)*f};
+}
+function mapPaint(){
+  const cv=$('mapCv'); if(!cv) return;
+  const dpr=window.devicePixelRatio||1, W=cv.clientWidth, H=cv.clientHeight;
+  if(cv.width!==W*dpr || cv.height!==H*dpr){ cv.width=W*dpr; cv.height=H*dpr; }
+  if(MAP.fit){ MAP.fit=false; mapFitView(W,H, MAP.fitted); MAP.fitted=true; }
+  const g=cv.getContext('2d'); g.setTransform(dpr,0,0,dpr,0,0); g.clearRect(0,0,W,H);
+  const now=Date.now()/1000, v=MAP.view, k=v.k;
+  const ls=[...MAP.links.values()].filter(l=>!MAP.onlyConf||l.confirmed);
+  const path=MAP.from&&MAP.to ? AvalonCore.path(ls,MAP.from,MAP.to,MAP.onlyConf) : null;
+  const onPath=new Set(); if(path) for(let i=1;i<path.length;i++) onPath.add(AvalonCore.key(path[i-1],path[i]));
+  const P=c=>{ const p=MAP.pos.get(c)||{x:0,y:0}; return {x:W/2+(p.x+v.x)*k, y:H/2+(p.y+v.y)*k}; };
+  const hot=MAP.hover||MAP.sel, near=new Set(hot?[hot]:[]);
+  if(hot) for(const l of ls){ if(l.a===hot) near.add(l.b); if(l.b===hot) near.add(l.a); }
+  const q=MAP.q.trim().toLowerCase();
+  // Дороги: тонкие линии; цвет — сколько осталось, пунктир — не подтверждена.
+  g.lineCap='round';
+  for(const l of ls){
+    const a=P(l.a), b=P(l.b), on=onPath.has(AvalonCore.key(l.a,l.b)), lit=!hot||l.a===hot||l.b===hot;
+    g.globalAlpha=lit ? (hot?1:.75) : .12;
+    g.setLineDash(l.confirmed?[]:[5,5]);
+    g.strokeStyle=on?'#f4c542':mapTimeColor(l.closesAt-now);
+    g.lineWidth=on?3.5:(hot&&lit?2.2:1.4);
+    g.beginPath(); g.moveTo(a.x,a.y); g.lineTo(b.x,b.y); g.stroke();
+  }
+  g.setLineDash([]);
+  // Узлы: светящиеся кружки цвета зоны, имя под кружком.
+  const nf=Math.max(9, Math.min(13, 12*Math.sqrt(k)));
+  const busy=[], labs=[];
+  g.textAlign='center'; g.textBaseline='middle';
+  for(const [c] of MAP.pos){
+    const p=P(c), r=mapR(c)*Math.max(.7,Math.min(1.3,k));
+    if(p.x<-80||p.x>W+80||p.y<-40||p.y>H+40) continue;
+    const col=mapZoneColor(c), nm=mapName(c);
+    const mark=c===MAP.here||c===MAP.sel||c===MAP.hover||(q&&nm.toLowerCase().includes(q));
+    const dim=hot && !near.has(c);
+    g.globalAlpha=dim?.18:1;
+    g.shadowColor=col; g.shadowBlur=mark?22:12;
+    g.beginPath(); g.arc(p.x,p.y,r,0,7); g.fillStyle=col; g.fill();
+    g.shadowBlur=0;
+    g.beginPath(); g.arc(p.x,p.y,r*.42,0,7); g.fillStyle='rgba(255,255,255,.85)'; g.fill();
+    if(mark){ g.beginPath(); g.arc(p.x,p.y,r+3.5,0,7); g.lineWidth=2; g.strokeStyle=c===MAP.here?'#f4c542':'#ffffff'; g.stroke(); }
+    const own={x:p.x, y:p.y, w:r*2+4, h:r*2+4};
+    busy.push(own);
+    labs.push({c, p, r, nm, mark, near:near.has(c), dim, own});
+  }
+  // Подписи: сначала отмеченные и соседи наведённой, потом зоны с большим
+  // числом дорог. Налезающую на уже поставленную — прячем.
+  labs.sort((a,b)=>(b.mark-a.mark)||(b.near-a.near)||((MAP.deg.get(b.c)||0)-(MAP.deg.get(a.c)||0))||(a.nm<b.nm?-1:1));
+  for(const L of labs){
+    const z=MAP.zones&&MAP.zones.get(L.c), label=(z&&z.t?'T'+z.t+' ':'')+L.nm;
+    g.font=`${L.mark?700:600} ${nf}px system-ui, -apple-system, sans-serif`;
+    const R={x:L.p.x, y:L.p.y+L.r+nf*.9, w:g.measureText(label).width+6, h:nf+4};
+    const free=!busy.some(o=>o!==L.own && Math.abs(o.x-R.x)<(o.w+R.w)/2 && Math.abs(o.y-R.y)<(o.h+R.h)/2);
+    if(!(L.mark||L.near) && (k<.3 || !free)) continue;
+    busy.push(R);
+    g.globalAlpha=L.dim?.18:1;
+    g.lineWidth=3.5; g.strokeStyle='#12151e'; g.strokeText(label, R.x, R.y);
+    g.fillStyle=L.mark?'#ffffff':'#d5d9e6'; g.fillText(label, R.x, R.y);
+  }
+  g.globalAlpha=1;
+  // Время на линии — мелко, без рамки, там, где не мешает названиям.
+  const tf=Math.max(9, Math.min(11, 10*k));
+  g.font=`600 ${tf}px system-ui, -apple-system, sans-serif`;
+  const free=r=>!busy.some(o=>Math.abs(o.x-r.x)<(o.w+r.w)/2 && Math.abs(o.y-r.y)<(o.h+r.h)/2);
+  const order=hot ? ls.filter(l=>l.a===hot||l.b===hot) : ls;
+  for(const l of order){
+    if(k<.45 && !hot) break;
+    const a=P(l.a), b=P(l.b), t=tr(AvalonCore.left(l.closesAt,now))+(l.size?' · '+l.size:'');
+    const w=g.measureText(t).width+4, h=tf+2;
+    let spot=null;
+    for(const f of [.5,.4,.6,.32,.68]){
+      const r={x:a.x+(b.x-a.x)*f, y:a.y+(b.y-a.y)*f, w, h};
+      if(free(r)){ spot=r; break; }
+    }
+    if(!spot && hot) spot={x:(a.x+b.x)/2, y:(a.y+b.y)/2, w, h};
+    if(!spot || spot.x<-40||spot.y<-20||spot.x>W+40||spot.y>H+20) continue;
+    busy.push(spot);
+    g.lineWidth=3; g.strokeStyle='#12151e'; g.strokeText(t,spot.x,spot.y);
+    g.fillStyle=mapTimeColor(l.closesAt-now); g.fillText(t,spot.x,spot.y);
+  }
+  g.globalAlpha=1; g.textAlign='left'; g.textBaseline='alphabetic';
+}
+function mapHit(x,y){
+  const cv=$('mapCv'), W=cv.clientWidth, H=cv.clientHeight, v=MAP.view;
+  let best=null, bd=Infinity;
+  for(const [c,p] of MAP.pos){
+    const sx=W/2+(p.x+v.x)*v.k, sy=H/2+(p.y+v.y)*v.k, d=Math.hypot(sx-x,sy-y);
+    if(d<Math.max(14,mapR(c)*v.k+6) && d<bd){ best=c; bd=d; }
+  }
+  return best;
+}
+// Значки ресурсов лежат рядом с сайтом (ico/, T4–T8 пяти видов): render.albiononline.com
+// открывается не везде. Чего в копии нет — прячем.
+const icoTag=(id,sz)=>`<img src="ico/${encodeURIComponent(id)}.webp" width="${sz}" height="${sz}" loading="lazy" onerror="this.style.visibility='hidden'"`;
+// Короткая подсказка при наведении: что за зона, что в ней, куда ведёт.
+function mapTipHTML(c){
+  const z=MAP.zones&&MAP.zones.get(c); if(!z) return '';
+  const head=[];
+  if(z.r){ const nm=MAP_ROAD[z.ty]; head.push(nm ? tr(nm)+(z.g>0&&MAP_ROMAN[z.g]?' '+MAP_ROMAN[z.g]:'') : tr('дорога')); }
+  else head.push(mapWord(MAP_ZQ, z.q));
+  if(z.t>0) head.push('T'+mapEsc(z.t));
+  // Качество (1–6) в игре есть только у чёрных зон.
+  if(!z.r && z.g>0) head.push(mapEsc(tr('качество '+z.g)));
+  const res=(z.rb&&z.rb.length ? z.rb : Object.keys(z.res||{})).map(k=>
+    `${icoTag('T'+Math.min(8,Math.max(z.t||4,4))+'_'+k,22)} alt="" title="${mapEsc(tr(MAP_RES[String(k).toLowerCase()]||String(k).toLowerCase()))}">`).join('');
+  const ch=Object.entries(z.ch||{}).map(([k,n])=>`<span class="mtI">${mapChestSVG(k)}×${mapEsc(n)}</span>`).join('');
+  const dg=Object.values(z.dg||{}).reduce((s,n)=>s+(+n||0),0);
+  const now=Date.now()/1000;
+  const lk=[...MAP.links.values()].filter(l=>l.a===c||l.b===c).sort((a,b)=>a.closesAt-b.closesAt).map(l=>
+    `<div>↔ ${mapEsc(mapName(l.a===c?l.b:l.a))} <b style="color:${mapTimeColor(l.closesAt-now)}">${mapEsc(tr(AvalonCore.left(l.closesAt,now)))}</b></div>`).join('');
+  return `<div class="mtName">${mapEsc(z.n)}</div><div class="mtSub">${head.join(' · ')}</div>
+    ${res||ch||dg?`<div class="mtRow">${res}${ch}${dg?`<span class="mtI">${mapEsc(tr('данжи'))}: ${dg}</span>`:''}</div>`:''}
+    ${lk?`<div class="mtLinks">${lk}</div>`:''}`;
+}
+// Сырые слова справочника -> русские слова, которые переводит tr. Незнакомое
+// показываем как есть (строчными, без подчёркиваний): оно английское.
+const MAP_ZQ={safe:'синяя', yellow:'жёлтая', red:'красная', black:'чёрная', city:'город', roads:'дорога', instance:'подземелье', island:'остров', other:'другое'};
+const MAP_RES={fiber:'волокно', hide:'шкуры', ore:'руда', wood:'дерево', rock:'камень'};
+const MAP_CHEST={small:'малый', small_elite:'малый элитный', medium_veteran:'средний ветеранский', medium_elite:'средний элитный'};
+const MAP_DUNGEON={solo:'одиночное', group:'групповое', raid:'рейдовое'};
+function mapWord(tab,k){
+  const key=String(k).toLowerCase();
+  return tab[key] ? mapEsc(tr(tab[key])) : mapEsc(key.replace(/_/g,' '));
+}
+// Цвет зоны — как квадратик в приложении (enum Оформление).
+const MAP_ZCOLOR={safe:'#4E77C4', yellow:'#D8B23A', red:'#C24A3E', black:'#6B6F7A', city:'#8A6A3A', island:'#4E8E5A', roads:'#8A5ABF'};
+// Вид дороги словами. Чёрные и обычные дороги в приложении безымянные —
+// у них остаётся просто «дорога».
+const MAP_ROAD={TUNNEL_HIDEOUT:'дорога убежищ', TUNNEL_HIDEOUT_DEEP:'глубокая дорога убежищ', TUNNEL_DEEP:'глубокая дорога',
+  TUNNEL_DEEP_RAID:'глубокая рейдовая дорога', TUNNEL_ROYAL:'королевская дорога', TUNNEL_ROYAL_RED:'королевская красная дорога'};
+const MAP_CAMP={solo_small:'соло малый', solo_big:'соло большой', group:'групповой', raid_small:'рейдовый малый', raid_big:'рейдовый большой'};
+const MAP_ROMAN=['','I','II','III','IV','V','VI'];
+// Пиксельный сундучок из приложения (СундукЗначок): 16×16, цвет по виду.
+const MAP_CHEST_PIX=['................','................','....DDDDDDDD....','...DLLLLLLLLD...','..DLLLLLLLLLLD..','..DLLBBBBBBLLD..',
+  '..DDDDDDDDDDDD..','..DBBBBGGGBBBD..','..DBBBBGKGBBBD..','..DDDDDDDDDDDD..','..DBBBBBBBBBBD..','..DBBBBBBBBBBD..','..DBBBBBBBBBBD..',
+  '..DDDDDDDDDDDD..','................','................'];
+const MAP_CHEST_COL={medium_veteran:['#4E77C4','#7FA3E0'], small_elite:['#8A5ABF','#B489DC'], medium_elite:['#C98A2E','#EEBC4E'], small:['#4E8E5A','#7FC188']};
+const mapChestSVG=(()=>{ const memo={}; return kind=>{
+  if(memo[kind]) return memo[kind];
+  const [body,light]=MAP_CHEST_COL[kind]||MAP_CHEST_COL.small, col={D:'#1A1F2B',K:'#1A1F2B',B:body,L:light,G:'#EEBC4E'};
+  let r='';
+  MAP_CHEST_PIX.forEach((row,y)=>{ for(let x=0;x<16;){ const ch=row[x]; let e=x; while(e<16&&row[e]===ch) e++;
+    if(col[ch]) r+=`<rect x="${x}" y="${y}" width="${e-x}" height="1" fill="${col[ch]}"/>`; x=e; } });
+  return memo[kind]=`<svg viewBox="0 0 16 16" aria-hidden="true">${r}</svg>`;
+}; })();
+const mapRow=(lbl,val)=>`<div class="mzRow"><div class="mzLbl">${tr(lbl)}</div><div class="mzVal">${val}</div></div>`;
+function mapCardHTML(c){
+  const z=MAP.zones&&MAP.zones.get(c); if(!z) return '';
+  const none=tr('нет');
+  const byKey=o=>Object.entries(o||{}).sort((a,b)=>a[0]<b[0]?-1:a[0]>b[0]?1:0);
+  // Подзаголовок как в приложении: вид зоны, тир, градация.
+  const head=[];
+  if(z.r){ const nm=MAP_ROAD[z.ty]; head.push(nm ? tr(nm)+(z.g>0&&MAP_ROMAN[z.g]?' '+MAP_ROMAN[z.g]:'') : tr('дорога')); }
+  else head.push(mapWord(MAP_ZQ, z.q));
+  if(z.t>0) head.push('T'+mapEsc(z.t));
+  if(!z.r && z.g>0) head.push(mapEsc(tr('качество '+z.g)));
+  const rows=[];
+  // Ресурсы: в открытом мире их задаёт биом (первый — основной), у дорог —
+  // список узлов: значок по старшему тиру, под ним разброс тиров и число узлов.
+  const rb=z.rb||[], res=byKey(z.res);
+  if(rb.length) rows.push(mapRow('ресурсы', '<div class="mzIcons">'+rb.map((k,i)=>{
+    const w=tr(MAP_RES[String(k).toLowerCase()]||String(k).toLowerCase()), t=i?w:tr('основной ресурс биома');
+    return `<div class="mzI" title="${mapEsc(t)}">${icoTag('T'+Math.min(8,Math.max(z.t,4))+'_'+k,30)} alt=""><span class="${i?'':'mzMain'}">${mapEsc(w)}</span></div>`;
+  }).join('')+'</div>'));
+  else if(res.length) rows.push(mapRow('ресурсы', '<div class="mzIcons">'+res.map(([k,pairs])=>{
+    const ts=pairs.map(p=>+p[0]), lo=Math.min(...ts), hi=Math.max(...ts), n=pairs.reduce((s,p)=>s+(+p[1]||0),0);
+    const w=tr(MAP_RES[String(k).toLowerCase()]||String(k).toLowerCase());
+    return `<div class="mzI" title="${mapEsc(w)}">${icoTag('T'+hi+'_'+k,30)} alt=""><span>${lo<hi?'T'+lo+'–T'+hi:'T'+hi}</span><span class="mzN">×${n}</span></div>`;
+  }).join('')+'</div>'));
+  // Лагеря: значками добыча (сундуки), строкой под ними — сами лагеря.
+  const ch=byKey(z.ch), lg=byKey(z.lg);
+  if(ch.length || z.r){
+    const icons = ch.length ? '<div class="mzIcons">'+ch.map(([k,n])=>
+      `<div class="mzI" title="${mapEsc(MAP_CHEST[k]?tr(MAP_CHEST[k]):k.replace(/_/g,' '))}">${mapChestSVG(k)}<span class="mzN">×${mapEsc(n)}</span></div>`).join('')+'</div>' : none;
+    const camps = lg.length ? '<div class="mzCamps">'+lg.map(([k,n])=>mapEsc(n)+' × '+mapWord(MAP_CAMP,k)).join(', ')+'</div>' : '';
+    rows.push(mapRow('лагеря', icons+camps));
+  }
+  const dg=byKey(z.dg);
+  if(dg.length || z.mi){
+    let v = dg.length ? dg.map(([k,n])=>mapEsc(n)+' × '+mapWord(MAP_DUNGEON,k)).join(', ') : none;
+    if(z.mi) v+='<div class="mzCamps">'+tr('есть выход в город туманов')+'</div>';
+    rows.push(mapRow('данжи', v));
+  }
+  // Связи зоны на карте: куда ведёт, сколько осталось, на сколько человек портал.
+  const now=Date.now()/1000;
+  const links=[...MAP.links.values()].filter(l=>l.a===c||l.b===c).sort((a,b)=>a.closesAt-b.closesAt);
+  const lk=links.map(l=>{ const k=mapEsc(AvalonCore.key(l.a,l.b));
+    const adm = MAP.key ? ` <button class="btn" data-mdel="${k}">${tr('удалить')}</button> <button class="btn" data-mban="${k}">${tr('забанить автора')}</button>` : '';
+    return `<div>↔ ${mapEsc(mapName(l.a===c?l.b:l.a))} · <span>${mapEsc(tr(AvalonCore.left(l.closesAt, now)))}</span>${l.size?' · <span>'+mapEsc(tr('портал на '+l.size))+'</span>':''}${adm}</div>`; }).join('');
+  return `<div class="panel"><div class="mzName">${mapEsc(z.n)}</div>
+    <div class="mzSub"><span class="mzSq" style="background:${MAP_ZCOLOR[z.q]||'#8b93a8'}"></span><span>${head.join(' · ')}</span></div>
+    ${rows.length?'<div class="mzBox">'+rows.join('')+'</div>':''}
+    ${lk?'<div class="mzLinks">'+lk+'</div>':''}${MAP.admMsg?'<div class="fresh">'+mapEsc(tr(MAP.admMsg))+'</div>':''}</div>`;
+}
+function render(){ $('app').innerHTML=mapHTML(); wireMap(); }
+function wireMap(){
+  const q=$('mapQ'); if(q) q.oninput=()=>{ MAP.q=q.value; mapPaint(); };
+  const f=$('mapFrom'), t=$('mapTo');
+  if(f){ f.value=MAP.from; f.onchange=()=>{ MAP.from=f.value; render(); }; }
+  if(t){ t.value=MAP.to; t.onchange=()=>{ MAP.to=t.value; render(); }; }
+  const cf=$('mapConf'); if(cf) cf.onchange=()=>{ MAP.onlyConf=cf.checked; render(); };
+  const tc=$('mapTipChk'); if(tc) tc.onchange=()=>{ MAP.tip=tc.checked; try{ localStorage.setItem('aan_maptip', MAP.tip?'1':'0'); }catch(e){} if(!MAP.tip) mapHover(null); };
+  const cv=$('mapCv'); if(!cv) return;
+  // Мышь и палец: один указатель тащит карту, два — щипок меняет масштаб.
+  let drag=null, pinch=null;
+  const pts=new Map();
+  const dist=()=>{ const [a,b]=[...pts.values()]; return Math.hypot(a.x-b.x, a.y-b.y)||1; };
+  cv.onpointerdown=e=>{
+    pts.set(e.pointerId, {x:e.clientX, y:e.clientY});
+    cv.setPointerCapture(e.pointerId);
+    if(pts.size===2){ pinch={d0:dist(), k0:MAP.view.k}; drag=null; MAP.touched=true; return; }
+    if(pts.size===1){
+      const r=cv.getBoundingClientRect(), hit=mapHit(e.clientX-r.left, e.clientY-r.top);
+      drag={x:e.clientX,y:e.clientY,vx:MAP.view.x,vy:MAP.view.y,moved:false,node:hit};
+      if(hit){ const p=MAP.pos.get(hit); drag.px=p.x; drag.py=p.y; }
+    }
+  };
+  cv.onpointermove=e=>{
+    if(!pts.has(e.pointerId)){
+      if(e.pointerType==='mouse'){ const r=cv.getBoundingClientRect(); mapHover(mapHit(e.clientX-r.left, e.clientY-r.top), e.clientX-r.left, e.clientY-r.top); }
+      return;
+    }
+    pts.set(e.pointerId, {x:e.clientX, y:e.clientY});
+    if(pinch && pts.size===2){ MAP.view.k=Math.max(.3,Math.min(4,pinch.k0*dist()/pinch.d0)); mapPaint(); return; }
+    if(!drag) return;
+    const dx=e.clientX-drag.x, dy=e.clientY-drag.y;
+    if(Math.abs(dx)+Math.abs(dy)>4){ drag.moved=true; MAP.touched=true; if(!drag.node) mapHover(null); }
+    if(drag.node && drag.moved){
+      const tip=$('mapTip'); if(tip) tip.hidden=true;
+      const p=MAP.pos.get(drag.node); if(p){ p.x=drag.px+dx/MAP.view.k; p.y=drag.py+dy/MAP.view.k; }
+      MAP.held=drag.node; MAP.alpha=Math.max(MAP.alpha,.3); mapRun(); return;
+    }
+    if(drag.node) return;
+    MAP.view.x=drag.vx+dx/MAP.view.k; MAP.view.y=drag.vy+dy/MAP.view.k; mapPaint();
+  };
+  const up=e=>{
+    pts.delete(e.pointerId);
+    if(MAP.held){ MAP.held=null; MAP.alpha=Math.max(MAP.alpha,.25); mapRun(); }
+    if(pinch){ if(pts.size<2) pinch=null; drag=null; return; }
+    const r=cv.getBoundingClientRect();
+    if(drag && !drag.moved && e.type==='pointerup'){ MAP.sel=mapHit(e.clientX-r.left, e.clientY-r.top);
+      $('mapCard').innerHTML = MAP.sel ? mapCardHTML(MAP.sel) : ''; mapPaint(); }
+    drag=null;
+  };
+  cv.onpointerup=up; cv.onpointercancel=up;
+  cv.onpointerleave=()=>mapHover(null);
+  cv.onwheel=e=>{ e.preventDefault(); MAP.touched=true; MAP.view.k=Math.max(.3,Math.min(4,MAP.view.k*(e.deltaY<0?1.1:0.9))); mapPaint(); };
+  $('mapCard').onclick=e=>{
+    const d=e.target.dataset; if(d.mdel) mapAdmin('delete', d.mdel); if(d.mban) mapAdmin('ban', d.mban);
+  };
+  if(MAP.sel) $('mapCard').innerHTML=mapCardHTML(MAP.sel);
+  MAP.fitted=false; if(!MAP.touched) MAP.fit=true;
+  mapPaint(); mapRun();
+}
+window.addEventListener('resize', ()=>{ if(!MAP.touched) MAP.fit=true; mapPaint(); });
+// Наведение мышью: подсветить зону с её дорогами и показать короткую плашку.
+function mapHover(c, x, y){
+  const tip=$('mapTip'), was=MAP.hover;
+  MAP.hover=c||null;
+  if(was!==MAP.hover) mapPaint();
+  if(!tip) return;
+  if(!MAP.hover || !MAP.tip){ tip.hidden=true; return; }
+  if(was!==MAP.hover) tip.innerHTML=mapTipHTML(MAP.hover);
+  tip.hidden=false;
+  const cv=$('mapCv'), W=cv.clientWidth, H=cv.clientHeight, tw=tip.offsetWidth, th=tip.offsetHeight;
+  tip.style.left=Math.max(6, Math.min(W-tw-6, x+16))+'px';
+  tip.style.top=Math.max(6, Math.min(H-th-6, y+16))+'px';
+}
+
+// ─── Старт ───
+mapRoute();
+paintChrome();
+render();
+mapStart();
+</script>
+</body>
+</html>
